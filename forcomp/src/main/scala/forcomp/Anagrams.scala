@@ -172,9 +172,17 @@ object Anagrams {
    *  Note: There is only one anagram of an empty sentence.
    */
   def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
-    def loop(sentence: Sentence, acc: Sentence) = {
-      val occurencesCombinations = combinations(sentenceOccurrences(sentence))
-      occurencesCombinations.filter(occurence => )
+    if(sentence.isEmpty) return List(sentence)
+    def loop(restOccurrences: Occurrences, acc: List[Sentence]): List[Sentence] = {
+        if(sentence.isEmpty) return acc
+        val occurencesWithWords: List[(Occurrences, List[Word])] = combinations(restOccurrences)
+            .map(occurence => occurence -> dictionaryByOccurrences.getOrElse(occurence, List()))
+            .filter(p => !p._2.isEmpty)
+        occurencesWithWords.foreach((p: (Occurrences, List[Word])) => {
+            val wordsWithSameOccurences = p._2
+            val newOccurence = subtract(restOccurrences, p._1)
+            wordsWithSameOccurences.map()
+        })
     }
   }
 }
