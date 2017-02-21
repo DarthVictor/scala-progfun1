@@ -37,6 +37,7 @@ object Anagrams {
   def wordOccurrences(w: Word): Occurrences = {
      w.toList.groupBy(c => c.toLower)
       .toList.map(pair => pair._1 -> pair._2.length)
+       .sortBy(_._1)
   }
 
   /** Converts a sentence into its character occurrence list. */
@@ -97,19 +98,19 @@ object Anagrams {
    */
   def combinations(occurrences: Occurrences): List[Occurrences] = {
     def loop (occurrences: Occurrences, acc: List[Occurrences]  ): List[Occurrences]  = occurrences match {
-      case List() => acc :+ List()
+      case List() => acc
       case head :: tail => {
           val char = head._1
           val numOfChars = head._2
           val rest = if(numOfChars > 1) (char -> (numOfChars - 1))::tail else tail
           val accWithHead = acc.map((occ: List[(Char, Int)]) => {
-            if(occ.last._1 == char ) occ.updated(occ.length - 1, (char -> (occ.last._2 + 1)))
+            if(occ.nonEmpty && occ.last._1 == char ) occ.updated(occ.length - 1, (char -> (occ.last._2 + 1)))
             else occ :+ (char -> 1)
           })
           loop(rest, acc ::: accWithHead)
       }
     }
-    loop(occurrences, List())
+    loop(occurrences, List(List()))
   }
 
 
@@ -124,10 +125,10 @@ object Anagrams {
    *  and has no zero-entries.
    */
   def subtract(x: Occurrences, y: Occurrences): Occurrences =
-    x.filter(p => y.find(py => py._1 == p._1 && py._2 == p._2) != None)
+    x.filterNot(p => y.find(py => py._1 == p._1 && py._2 == p._2) != None)
         .map(p =>  y.find(py => py._1 == p._1) match {
               case None => p
-              case yPair: (Char, Int) => p._1 -> (p._2 - yPair._2)
+              case Some(yPair: (Char, Int)) => p._1 -> (p._2 - yPair._2)
             })
 
 
@@ -175,14 +176,18 @@ object Anagrams {
     if(sentence.isEmpty) return List(sentence)
     def loop(restOccurrences: Occurrences, acc: List[Sentence]): List[Sentence] = {
         if(sentence.isEmpty) return acc
-        val occurencesWithWords: List[(Occurrences, List[Word])] = combinations(restOccurrences)
-            .map(occurence => occurence -> dictionaryByOccurrences.getOrElse(occurence, List()))
-            .filter(p => !p._2.isEmpty)
-        occurencesWithWords.foreach((p: (Occurrences, List[Word])) => {
-            val wordsWithSameOccurences = p._2
-            val newOccurence = subtract(restOccurrences, p._1)
-            wordsWithSameOccurences.map()
+        val occurrencesWithWords: List[(Occurrences, List[Word])] = combinations(restOccurrences)
+            .map(occurrence => occurrence -> dictionaryByOccurrences.getOrElse(occurrence, List()))
+            .filter(p => p._2.nonEmpty)
+        occurrencesWithWords.flatMap((p: (Occurrences, List[Word])) => {
+            val wordsWithSameOccurrences = p._2
+            val newOccurrence: Occurrences = subtract(restOccurrences, p._1)
+            val newAcc: List[Sentence] = wordsWithSameOccurrences.flatMap(word => {
+              acc.map(s => s :+ word)
+            })
+            loop(newOccurrence, newAcc)
         })
     }
+    loop(sentenceOccurrences(sentence), List())
   }
 }
