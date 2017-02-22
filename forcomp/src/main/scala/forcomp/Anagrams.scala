@@ -173,21 +173,24 @@ object Anagrams {
    *  Note: There is only one anagram of an empty sentence.
    */
   def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
-    if(sentence.isEmpty) return List(sentence)
     def loop(restOccurrences: Occurrences, acc: List[Sentence]): List[Sentence] = {
-        if(sentence.isEmpty) return acc
-        val occurrencesWithWords: List[(Occurrences, List[Word])] = combinations(restOccurrences)
-            .map(occurrence => occurrence -> dictionaryByOccurrences.getOrElse(occurrence, List()))
-            .filter(p => p._2.nonEmpty)
-        occurrencesWithWords.flatMap((p: (Occurrences, List[Word])) => {
-            val wordsWithSameOccurrences = p._2
-            val newOccurrence: Occurrences = subtract(restOccurrences, p._1)
-            val newAcc: List[Sentence] = wordsWithSameOccurrences.flatMap(word => {
-              acc.map(s => s :+ word)
+        if(restOccurrences.isEmpty) acc
+        else {
+            val occurrencesWithWords: List[(Occurrences, List[Word])] = combinations(restOccurrences)
+              .map(occurrence => occurrence -> dictionaryByOccurrences.getOrElse(occurrence, List()))
+              .filter(p => p._2.nonEmpty)
+
+            occurrencesWithWords.flatMap((p: (Occurrences, List[Word])) => {
+              val wordsWithSameOccurrences = p._2
+              val newOccurrence: Occurrences = subtract(restOccurrences, p._1)
+              val newAcc: List[Sentence] = wordsWithSameOccurrences.flatMap(word => {
+                acc.map(s => s :+ word)
+              })
+              loop(newOccurrence, newAcc)
             })
-            loop(newOccurrence, newAcc)
-        })
+        }
     }
-    loop(sentenceOccurrences(sentence), List())
+    if(sentence.isEmpty) List(sentence)
+    else loop(sentenceOccurrences(sentence), List(List()))
   }
 }
